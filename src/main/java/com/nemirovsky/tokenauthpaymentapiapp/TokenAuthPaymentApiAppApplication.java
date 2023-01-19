@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class TokenAuthPaymentApiAppApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TokenAuthPaymentApiAppApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(TokenAuthPaymentApiAppApplication.class, args);
+    }
 
 }
