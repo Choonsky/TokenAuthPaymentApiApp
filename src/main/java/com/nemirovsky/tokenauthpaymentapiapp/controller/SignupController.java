@@ -1,71 +1,43 @@
 package com.nemirovsky.tokenauthpaymentapiapp.controller;
 
+import com.nemirovsky.tokenauthpaymentapiapp.model.Account;
 import com.nemirovsky.tokenauthpaymentapiapp.model.Role;
 import com.nemirovsky.tokenauthpaymentapiapp.model.Roles;
 import com.nemirovsky.tokenauthpaymentapiapp.model.User;
-import com.nemirovsky.tokenauthpaymentapiapp.payload.LoginRequest;
 import com.nemirovsky.tokenauthpaymentapiapp.payload.MessageResponse;
 import com.nemirovsky.tokenauthpaymentapiapp.payload.SignupRequest;
-import com.nemirovsky.tokenauthpaymentapiapp.payload.UserInfoResponse;
+import com.nemirovsky.tokenauthpaymentapiapp.repository.AccountRepository;
 import com.nemirovsky.tokenauthpaymentapiapp.repository.RoleRepository;
 import com.nemirovsky.tokenauthpaymentapiapp.repository.UserRepository;
 import com.nemirovsky.tokenauthpaymentapiapp.security.JwtUtils;
-import com.nemirovsky.tokenauthpaymentapiapp.security.UserDetailsImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
+import org.joda.money.Money;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class AuthController {
-    AuthenticationManager authenticationManager;
+public class SignupController {
+
+    @Value("${tokenauthpaymentapi.initialamount}")
+    private static String initialAmountFromProperties;
+    private static final Money initialAmount = Money.parse(initialAmountFromProperties);
 
     UserRepository userRepository;
+
+    AccountRepository accountRepository;
 
     RoleRepository roleRepository;
 
     PasswordEncoder encoder;
-
-    JwtUtils jwtUtils;
-
-    @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-
-        Authentication authentication = authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
-
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(new UserInfoResponse(userDetails.getId(),
-                        userDetails.getUsername(),
-                        userDetails.getEmail(),
-                        roles));
-    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
@@ -92,12 +64,12 @@ public class AuthController {
         } else {
             strRoles.forEach(role -> {
                 switch (role) {
-                    case "admin" -> {
+                    case "ADMIN" -> {
                         Role adminRole = roleRepository.findByName(Roles.ROLE_ADMIN)
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(adminRole);
                     }
-                    case "mod" -> {
+                    case "MODERATOR" -> {
                         Role modRole = roleRepository.findByName(Roles.ROLE_MODERATOR)
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(modRole);
@@ -113,14 +85,10 @@ public class AuthController {
 
         user.setRoles(roles);
         userRepository.save(user);
+        accountRepository.save(new Account(user, initialAmount));
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-    }
+        return ResponseEntity.ok(new MessageResponse("User registered successfully, account created with "
+                + initialAmountFromProperties + "balance!"));
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser() {
-        ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(new MessageResponse("You've been signed out!"));
     }
 }

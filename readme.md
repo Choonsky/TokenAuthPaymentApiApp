@@ -24,6 +24,7 @@ Project is created with:
 * Spring Web 
 * Log4J
 * JUnit
+* Joda money
 
 ## Setup
 
