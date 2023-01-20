@@ -33,8 +33,6 @@ public class LoginController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-        // TODO: brute force protection
-
         // TODO: check multiple sessions aviability
 
         Authentication authentication = authenticationManager
