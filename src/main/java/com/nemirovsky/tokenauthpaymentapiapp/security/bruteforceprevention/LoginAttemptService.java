@@ -1,10 +1,9 @@
-package com.nemirovsky.tokenauthpaymentapiapp.security;
-
-import org.springframework.stereotype.Service;
+package com.nemirovsky.tokenauthpaymentapiapp.security.bruteforceprevention;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

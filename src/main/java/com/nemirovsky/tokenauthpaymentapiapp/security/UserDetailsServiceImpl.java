@@ -2,9 +2,10 @@ package com.nemirovsky.tokenauthpaymentapiapp.security;
 
 import com.nemirovsky.tokenauthpaymentapiapp.model.User;
 import com.nemirovsky.tokenauthpaymentapiapp.repository.UserRepository;
-import com.nemirovsky.tokenauthpaymentapiapp.security.UserDetailsImpl;
+import com.nemirovsky.tokenauthpaymentapiapp.security.bruteforceprevention.LoginAttemptService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,9 +13,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
+    @Autowired
     UserRepository userRepository;
 
     @Autowired
@@ -33,12 +36,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+                .orElse(null);
+
+            if (user == null) {
+                user = new User(" ", " ", "  ");
+            }
 
         return UserDetailsImpl.build(user);
     }
 
-    private String getClientIP() {
+    public String getClientIP() {
         String xfHeader = request.getHeader("X-Forwarded-For");
         if (xfHeader == null || xfHeader.isEmpty() || !xfHeader.contains(request.getRemoteAddr())) {
             return request.getRemoteAddr();

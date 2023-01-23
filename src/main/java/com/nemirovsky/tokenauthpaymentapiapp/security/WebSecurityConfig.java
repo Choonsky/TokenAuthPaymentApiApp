@@ -10,7 +10,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,9 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @RequiredArgsConstructor
 public class WebSecurityConfig {
-
-    @Value("${spring.h2.console.path}")
-    private String h2ConsolePath;
 
     @Autowired
     UserDetailsServiceImpl userDetailsService;
@@ -36,6 +32,7 @@ public class WebSecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
+
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 
         authProvider.setUserDetailsService(userDetailsService);
@@ -63,14 +60,17 @@ public class WebSecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeHttpRequests()
-                .requestMatchers("/api/login/**").permitAll()
-                .requestMatchers("/api/logout/**").permitAll()
-                .requestMatchers("/api/signup/**").permitAll()
-                .requestMatchers("/api/test/**").permitAll()
-                .requestMatchers(h2ConsolePath + "/**").permitAll()
-                .anyRequest().authenticated();
+                .and().authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers(
+                                "/api/login",
+                                "/api/logout",
+                                "/api/signup",
+                                "/h2-ui",
+                                "/api/h2-ui/**",
+                                "/api/test"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                );
 
         // fix H2 database console: Refused to display ' in a frame because it set 'X-Frame-Options' to 'deny'
         http.headers().frameOptions().sameOrigin();

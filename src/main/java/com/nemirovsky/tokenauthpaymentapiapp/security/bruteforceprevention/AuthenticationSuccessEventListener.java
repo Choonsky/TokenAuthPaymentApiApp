@@ -1,4 +1,4 @@
-package com.nemirovsky.tokenauthpaymentapiapp.security;
+package com.nemirovsky.tokenauthpaymentapiapp.security.bruteforceprevention;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;

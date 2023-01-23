@@ -1,42 +1,32 @@
 package com.nemirovsky.tokenauthpaymentapiapp.controller;
 
 import com.nemirovsky.tokenauthpaymentapiapp.model.Account;
-import com.nemirovsky.tokenauthpaymentapiapp.model.Role;
-import com.nemirovsky.tokenauthpaymentapiapp.model.Roles;
 import com.nemirovsky.tokenauthpaymentapiapp.model.User;
 import com.nemirovsky.tokenauthpaymentapiapp.payload.MessageResponse;
 import com.nemirovsky.tokenauthpaymentapiapp.payload.SignupRequest;
 import com.nemirovsky.tokenauthpaymentapiapp.repository.AccountRepository;
-import com.nemirovsky.tokenauthpaymentapiapp.repository.RoleRepository;
 import com.nemirovsky.tokenauthpaymentapiapp.repository.UserRepository;
-import com.nemirovsky.tokenauthpaymentapiapp.security.JwtUtils;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.joda.money.Money;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api")
 public class SignupController {
 
-    @Value("${tokenauthpaymentapi.initialamount}")
-    private static String initialAmountFromProperties;
-    private static final Money initialAmount = Money.parse(initialAmountFromProperties);
+    private static final String INITIAL_AMOUNT = "USD 8.00";
 
+    @Autowired
     UserRepository userRepository;
 
+    @Autowired
     AccountRepository accountRepository;
 
-    RoleRepository roleRepository;
-
+    @Autowired
     PasswordEncoder encoder;
 
     @PostMapping("/signup")
@@ -54,41 +44,11 @@ public class SignupController {
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
 
-        Set<String> strRoles = signUpRequest.getRole();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role userRole = roleRepository.findByName(Roles.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "ADMIN" -> {
-                        Role adminRole = roleRepository.findByName(Roles.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-                    }
-                    case "MODERATOR" -> {
-                        Role modRole = roleRepository.findByName(Roles.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(modRole);
-                    }
-                    default -> {
-                        Role userRole = roleRepository.findByName(Roles.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
-                    }
-                }
-            });
-        }
-
-        user.setRoles(roles);
         userRepository.save(user);
-        accountRepository.save(new Account(user, initialAmount));
+        Account account = accountRepository.save(new Account(user, Money.parse(INITIAL_AMOUNT)));
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully, account created with "
-                + initialAmountFromProperties + "balance!"));
+                + account.getBalance() + " balance!"));
 
     }
 }

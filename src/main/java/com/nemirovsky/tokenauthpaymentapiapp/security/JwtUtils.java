@@ -4,12 +4,15 @@ import io.jsonwebtoken.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -22,6 +25,9 @@ public class JwtUtils {
 
     @Value("${jwt.cookiename}")
     private String jwtCookie;
+
+    @Autowired
+    UserDetailsServiceImpl userDetailsService;
 
     public String getJwtFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, jwtCookie);
@@ -38,27 +44,27 @@ public class JwtUtils {
     }
 
     public ResponseCookie getCleanJwtCookie() {
-        return ResponseCookie.from(jwtCookie, null).path("/api").build();
+        return ResponseCookie.from(jwtCookie).path("/api").build();
     }
 
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(token).getBody().getSubject();
     }
 
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+            Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
-            log.error("Invalid JWT signature", e);
+            log.error("Invalid JWT signature!");
         } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token:", e);
+            log.error("Invalid JWT token!");
         } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired:", e);
+            log.error("JWT token is expired!");
         } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported:", e);
+            log.error("JWT token is unsupported!");
         } catch (IllegalArgumentException e) {
-            log.error("JWT claims string is empty:", e);
+            log.error("JWT claims string is empty!");
         }
 
         return false;
@@ -69,6 +75,8 @@ public class JwtUtils {
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+// to make multisessions from different devices
+                .claim("ip",userDetailsService.getClientIP())
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
