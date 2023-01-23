@@ -46,10 +46,10 @@ public class PaymentController {
         Account account = accountRepository.findByUser(user).orElse(null);
         if (account == null) return "Could not find account for user" + user.getUsername() + "in database!";
         if (account.getBalance().isLessThan(paymentAmount))
-            return "Insufficient balance for payment. Available: $" + account.getBalance();
+            return "Insufficient balance for payment. Available: " + account.getBalance();
         account.setBalance(account.getBalance().minus(paymentAmount));
         accountRepository.save(account);
         paymentRepository.save(new Payment(user, account, paymentAmount));
-        return "Payment is complete! Available: $" + account.getBalance();
+        return "Payment is complete! Available: " + account.getBalance();
     }
 }
