@@ -2,7 +2,6 @@ package com.nemirovsky.tokenauthpaymentapiapp.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -65,15 +64,10 @@ public class WebSecurityConfig {
                                 "/api/login",
                                 "/api/logout",
                                 "/api/signup",
-                                "/h2-ui",
-                                "/api/h2-ui/**",
                                 "/api/test"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
-
-        // fix H2 database console: Refused to display ' in a frame because it set 'X-Frame-Options' to 'deny'
-        http.headers().frameOptions().sameOrigin();
 
         http.authenticationProvider(authenticationProvider());
 
